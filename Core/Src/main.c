@@ -106,6 +106,7 @@ int main(void) {
     /* USER CODE END 2 */
     uint32_t v = FlashRead(FLashStartAddr);
     HAL_GPIO_WritePin(GPIOA, Led0Pin, v);
+    PAout(3) = 1;
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
@@ -118,6 +119,11 @@ int main(void) {
                 HAL_GPIO_WritePin(GPIOA, Led0Pin, newState);
                 HAL_StatusTypeDef s = FlashWrite(FLashStartAddr, newState);
                 while (!HAL_GPIO_ReadPin(GPIOB, Key1Pin));
+
+                uint8_t aTxStartMessages[] = "\r\n******UART commucition using IT******\r\nPlease enter 10 characters:\r\n";
+                uint8_t aRxBuffer[20];
+                //发送串口数据
+                HAL_UART_Transmit_IT(&huart1,(uint8_t*)aTxStartMessages,sizeof(aTxStartMessages));
             }
         }
     }
@@ -172,7 +178,7 @@ static void MX_GPIO_Init(void) {
     __HAL_RCC_GPIOC_CLK_ENABLE();
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = GPIO_PIN_All;
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
@@ -219,6 +225,21 @@ static void MX_USART1_UART_Init(void)
 
     /* USER CODE END USART1_Init 2 */
 
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
+
+}
+
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
+
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    uint8_t aRxBuffer[20];
+    UNUSED(huart);
+    HAL_UART_Transmit(&huart1,(uint8_t*)aRxBuffer,10,0xFFFF);//(uint8_t*)aRxBuffer为字符串地址，10为字符串长度，0xFFFF为超时时间
 }
 
 /* USER CODE END 4 */
