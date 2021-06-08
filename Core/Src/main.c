@@ -22,6 +22,7 @@
 #include "delay.h"
 #include "io.h"
 #include "flash.h"
+#include <string.h>
 
 #define Key1Pin GPIO_PIN_8
 #define Key2Pin GPIO_PIN_9
@@ -73,46 +74,24 @@ static void MX_USART1_UART_Init(void);
 
 /* USER CODE END 0 */
 
-uint8_t aTxStartMessages[] = "\r\n******UART commucition using IT******\r\nPlease enter 10 characters:\r\n";
-uint8_t aRxBuffer[2];
+uint8_t aTxStartMessages[] = "\r\n******UART commucition using IT******\r\nPlease enter 10 characters:";
+uint8_t aRxBuffer[1];
+#define MAX_RECV_LEN 1024
+uint8_t MSG_BUFF[MAX_RECV_LEN] = {0};
+uint16  MSG_LEGHT = 0;
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
 int main(void) {
-    /* USER CODE BEGIN 1 */
-
-    /* USER CODE END 1 */
-
-    /* MCU Configuration--------------------------------------------------------*/
-
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     HAL_Init();
-
-    /* USER CODE BEGIN Init */
-
-    /* USER CODE END Init */
-
-    /* Configure the system clock */
     SystemClock_Config();
-
-    /* USER CODE BEGIN SysInit */
-
-    /* USER CODE END SysInit */
-
-    /* Initialize all configured peripherals */
     MX_USART1_UART_Init();
     MX_GPIO_Init();
-    /* USER CODE BEGIN 2 */
-    /* USER CODE END 2 */
     uint32_t v = FlashRead(FLashStartAddr);
     HAL_GPIO_WritePin(GPIOA, Led0Pin, v);
     PAout(3) = 0;
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
+    //接收串口数据
+    uint16_t size = sizeof(aRxBuffer);
+    HAL_UART_Receive_IT(&huart1,(uint8_t*)aRxBuffer, 1);
     while (1) {
-        /* USER CODE BEGIN 3 */
         if (!HAL_GPIO_ReadPin(GPIOB, Key1Pin)) {
             delay_ms(20);
             if (!HAL_GPIO_ReadPin(GPIOB, Key1Pin)) {
@@ -123,16 +102,12 @@ int main(void) {
                 while (!HAL_GPIO_ReadPin(GPIOB, Key1Pin));
 
                 //发送串口数据
-//                HAL_UART_Transmit_IT(&huart1,(uint8_t*)aTxStartMessages,sizeof(aTxStartMessages));
+                HAL_UART_Transmit_IT(&huart1, (uint8_t *) aTxStartMessages, sizeof(aTxStartMessages));
             }
         }
-
-        //接收串口数据
-//        uint16_t size = sizeof(aRxBuffer);
-//        HAL_UART_Receive_IT(&huart1,(uint8_t*)aRxBuffer, size);
     }
-    /* USER CODE END 3 */
 }
+
 
 /**
   * @brief System Clock Configuration
@@ -241,14 +216,19 @@ void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    UNUSED(huart);
-    uint8_t msg[sizeof(aRxBuffer)+2];
-    for (int i = 0; i < sizeof(aRxBuffer); i++) {
-        msg[i] = aRxBuffer[i];
+    MSG_LEGHT++;
+    MSG_BUFF[MSG_LEGHT-1] = aRxBuffer[0];
+    HAL_StatusTypeDef status = HAL_OK;
+    do {
+        status = HAL_UART_Receive_IT(&huart1,(uint8_t*)aRxBuffer, 1);
+    } while (status != HAL_OK);
+    if (aRxBuffer[0] == '\r') {
+        MSG_BUFF[MSG_LEGHT-1] = '\r';
+        MSG_BUFF[MSG_LEGHT] = '\n';
+        HAL_UART_Transmit(&huart1,(uint8_t*)MSG_BUFF, MSG_LEGHT,0xFFFF);//(uint8_t*)aRxBuffer为字符串地址，10为字符串长度，0xFFFF为超时时间
+        MSG_LEGHT = 0;
+        memset(MSG_BUFF, 0, MSG_LEGHT);
     }
-    msg[sizeof(msg)-2] = '\r';
-    msg[sizeof(msg)-1] = '\n';
-    HAL_UART_Transmit(&huart1,(uint8_t*)msg, sizeof(msg),0xFFFF);//(uint8_t*)aRxBuffer为字符串地址，10为字符串长度，0xFFFF为超时时间
 }
 
 /* USER CODE END 4 */
