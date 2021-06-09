@@ -23,6 +23,7 @@
 #include "io.h"
 #include "flash.h"
 #include <string.h>
+#include <stdio.h>
 
 #define Key1Pin GPIO_PIN_8
 #define Key2Pin GPIO_PIN_9
@@ -90,7 +91,7 @@ int main(void) {
     PAout(3) = 0;
     //接收串口数据
     uint16_t size = sizeof(aRxBuffer);
-    HAL_UART_Receive_IT(&huart1,(uint8_t*)aRxBuffer, 1);
+    HAL_StatusTypeDef status = HAL_UART_Receive_IT(&huart1,(uint8_t*)aRxBuffer, 1);
     while (1) {
         if (!HAL_GPIO_ReadPin(GPIOB, Key1Pin)) {
             delay_ms(20);
