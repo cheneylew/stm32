@@ -165,11 +165,20 @@ static void MX_GPIO_Init(void) {
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     GPIO_InitTypeDef GPIO_InitStruct_B = {0};
-    GPIO_InitStruct_B.Pin = GPIO_PIN_All;
+    GPIO_InitStruct_B.Pin = GPIO_PIN_8|GPIO_PIN_9;
     GPIO_InitStruct_B.Mode = GPIO_MODE_IT_FALLING;
     GPIO_InitStruct_B.Pull = GPIO_PULLUP;
 //    GPIO_InitStruct_B.Speed = GPIO_SPEED_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct_B);
+
+    GPIO_InitTypeDef GPIO_InitStruct_BI = {0};
+    GPIO_InitStruct_BI.Pin = GPIO_PIN_10;
+    GPIO_InitStruct_BI.Mode = GPIO_MODE_IT_FALLING;
+    GPIO_InitStruct_BI.Pull = GPIO_PULLUP;
+    GPIO_InitStruct_B.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct_BI);
+    HAL_NVIC_SetPriority(EXTI15_10_IRQn,0,0);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
 /* USER CODE BEGIN 4 */
@@ -227,9 +236,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         MSG_BUFF[MSG_LEGHT-1] = '\r';
         MSG_BUFF[MSG_LEGHT] = '\n';
         HAL_UART_Transmit(&huart1,(uint8_t*)MSG_BUFF, MSG_LEGHT,0xFFFF);//(uint8_t*)aRxBuffer为字符串地址，10为字符串长度，0xFFFF为超时时间
+        memset(MSG_BUFF, 0, MSG_LEGHT+1);
         MSG_LEGHT = 0;
-        memset(MSG_BUFF, 0, MSG_LEGHT);
     }
+}
+
+void EXTI15_10_IRQHandler(void)
+
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    delay_ms(10);
+    switch (GPIO_Pin) {
+        case GPIO_PIN_10:
+            ;
+    };
 }
 
 /* USER CODE END 4 */
@@ -246,22 +269,3 @@ void Error_Handler(void) {
     }
     /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
-}
-#endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
