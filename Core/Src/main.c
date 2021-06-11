@@ -66,13 +66,14 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE END 0 */
 #define Led0Pin GPIO_PIN_0
 #define Key1Pin GPIO_PIN_8
-#define MAX_RECV_LEN 1024
 
-//uint8_t aTxStartMessages[] = "AT+CIPSTART=\"TCP\",\"192.168.58.159\",8080\r\n";
-uint8_t aTxStartMessages[] = "AT+CIFSR\r\n";
+uint8_t aTxStartMessages[] = "AT\r\n";
 uint8_t aRxBuffer[1];
-uint8_t msgBuff[MAX_RECV_LEN] = {0};
+uint8_t msgBuff[1024] = {0};
 uint16_t msgLength = 0;
+uint32_t nowMs = 0;
+uint32_t lastMs = 0;
+uint8_t isExistData = 0;
 
 /**
   * @brief  The application entry point.
@@ -125,6 +126,14 @@ int main(void) {
             }
         }
         /* USER CODE BEGIN 3 */
+        delay_ms(1);
+        nowMs++; //最大值为4294967295，溢出后自动为零
+        if (nowMs-lastMs>1000 && isExistData == 1) {
+            msgBuff;//把数据读走，数据清空
+            isExistData = 0; //变为未传输过数据
+            memset(msgBuff, 0, msgLength); //清空数据
+            msgLength = 0; //数据长度清零
+        }
     }
     /* USER CODE END 3 */
 }
@@ -244,22 +253,18 @@ void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    isExistData = 1;
     msgBuff[msgLength] = aRxBuffer[0];
     msgLength += 1;
     HAL_StatusTypeDef recStatus = HAL_OK;
-    while (recStatus != HAL_OK) {
+    do {
         recStatus = HAL_UART_Receive_IT(&huart1, (uint8_t *) aRxBuffer, 1);
-    }
-    if (msgLength > 2 && aRxBuffer[0] == '\n' && msgBuff[msgLength-1] == '\n' && msgBuff[msgLength-2] == '\r') {
-//        HAL_UART_Transmit(&huart1,(uint8_t*)msgBuff, msgLength,0xFFFF);//(uint8_t*)aRxBuffer为字符串地址，10为字符串长度，0xFFFF为超时时间
-        memset(msgBuff, 0, msgLength-1);
-        msgLength = 0;
-    }
-    if (aRxBuffer[0] == '\n') {
-        if (1 == 1) {
-            int a,b,c;
-        }
-    }
+    } while (recStatus != HAL_OK);
+    lastMs = nowMs;
+//    if (msgLength > 2 && aRxBuffer[0] == '\n' && msgBuff[msgLength-1] == '\n' && msgBuff[msgLength-2] == '\r') {
+//        memset(msgBuff, 0, msgLength);
+//        msgLength = 0;
+//    }
 }
 /* USER CODE END 4 */
 
