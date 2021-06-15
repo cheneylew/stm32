@@ -23,6 +23,7 @@
 #include "string.h"
 #include "delay.h"
 #include "io.h"
+#include "wifi.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -65,6 +66,7 @@ static void MX_USART1_UART_Init(void);
 
 /* USER CODE END 0 */
 #define Led0Pin GPIO_PIN_0
+#define BuzzerPin GPIO_PIN_6
 #define Key1Pin GPIO_PIN_8
 
 uint8_t aTxStartMessages[] = "AT\r\n";
@@ -74,6 +76,15 @@ uint16_t msgLength = 0;
 uint32_t nowMs = 0;
 uint32_t lastMs = 0;
 uint8_t isExistData = 0;
+
+void buzzer() {
+    for (int i = 0; i < 500; ++i) {
+        HAL_GPIO_WritePin(GPIOA, BuzzerPin, GPIO_PIN_RESET);
+        delay_us(200);
+        HAL_GPIO_WritePin(GPIOA, BuzzerPin, GPIO_PIN_SET);
+        delay_us(200);
+    }
+}
 
 /**
   * @brief  The application entry point.
@@ -120,9 +131,10 @@ int main(void) {
                 uint32_t newState = 1 - state;
                 HAL_GPIO_WritePin(GPIOA, Led0Pin, newState);
                 while (!HAL_GPIO_ReadPin(GPIOB, Key1Pin));
-
+                buzzer();
                 //发送串口数据
-                HAL_UART_Transmit_IT(&huart1, (uint8_t *) aTxStartMessages, sizeof(aTxStartMessages));
+                int32_t size = sizeof(WiFiTCPConnect);
+                HAL_UART_Transmit_IT(&huart1, (uint8_t *) WiFiTCPConnect, size);
             }
         }
         /* USER CODE BEGIN 3 */
@@ -222,7 +234,7 @@ static void MX_GPIO_Init(void) {
     /*Configure GPIO pins : LED1_Pin LED2_Pin LED3_Pin LED4_Pin
                              LED5_Pin */
     GPIO_InitStruct.Pin = Led0Pin | LED1_Pin | LED2_Pin | LED3_Pin | LED4_Pin
-                          | LED5_Pin;
+                          | LED5_Pin | BuzzerPin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
