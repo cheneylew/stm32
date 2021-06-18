@@ -46,11 +46,11 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32F1xx_HAL_Driver/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include Drivers/Helper/Inc)
+include_directories(Core/Inc Drivers/STM32F1xx_HAL_Driver/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include Drivers/Helper/Inc Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS)
 
 add_definitions(-DUSE_HAL_DRIVER -DSTM32F103x6)
 
-file(GLOB_RECURSE SOURCES "startup/*.*" "Drivers/*.*" "Core/*.*" "Drivers/Helper/*.*")
+file(GLOB_RECURSE SOURCES "startup/*.*" "Drivers/*.*" "Core/*.*" "Drivers/Helper/*.*" "Middlewares/Third_Party/FreeRTOS/Source/*.*" "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/*.*" "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F103C6Tx_FLASH.ld)
 
