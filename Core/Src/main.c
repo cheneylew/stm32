@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "stdio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -200,7 +201,6 @@ static void MX_RTC_Init(void)
 
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef DateToUpdate = {0};
-  RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
 
@@ -240,9 +240,10 @@ static void MX_RTC_Init(void)
   }
   /** Enable the Alarm A
   */
+  RTC_AlarmTypeDef sAlarm = {0};
   sAlarm.AlarmTime.Hours = 0x14;
-  sAlarm.AlarmTime.Minutes = 0x32;
-  sAlarm.AlarmTime.Seconds = 0x0;
+  sAlarm.AlarmTime.Minutes = 0x30;
+  sAlarm.AlarmTime.Seconds = 0x15;
   sAlarm.Alarm = RTC_ALARM_A;
   if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
   {
@@ -321,6 +322,40 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+}
+
+void SetAlarm(RTC_DateTypeDef *date, RTC_TimeTypeDef *time) {
+    //每10s触发一次
+    uint32_t durationSeconds = 10;
+    uint8_t hours = time->Hours;
+    uint8_t minutes = time->Minutes;
+    uint8_t seconds = time->Seconds;
+    if (seconds+durationSeconds>59) {
+        minutes += 1;
+        seconds = (seconds+durationSeconds+1)%60-1;
+    } else {
+        seconds += durationSeconds;
+    }
+    RTC_AlarmTypeDef sAlarm = {0};
+    sAlarm.AlarmTime.Hours = hours;
+    sAlarm.AlarmTime.Minutes = minutes;
+    sAlarm.AlarmTime.Seconds = seconds;
+    sAlarm.Alarm = RTC_ALARM_A;
+    if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
+//闹钟中断回调函数
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+{
+    RTC_DateTypeDef date;
+    RTC_TimeTypeDef time;
+    HAL_RTC_GetTime(hrtc, &time, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(hrtc, &date, RTC_FORMAT_BIN);
+    printf("alarm!!\r\n");
+    SetAlarm(&date, &time);
 }
 
 /* USER CODE BEGIN 4 */
